@@ -1,0 +1,20 @@
+#!/bin/bash
+
+log='/var/tmp/latency.log'
+
+find_gateway() {
+  gateway=$(traceroute google.com 2>/dev/null | egrep '^ 1 ' | awk '{print $2}')
+}
+
+complain() {
+  echo "High latency detected at $(date):\n$1" | tee -a $log
+}
+
+while :; do
+  find_gateway
+  [ -z "$gateway" ] && continue
+  echo "$gateway" | grep -q '*' && continue
+  result=`ping -q -c 10 $gateway`
+  echo $result | egrep -q "[[:digit:]]{4,}\." && complain "$result"
+  sleep 1
+done
